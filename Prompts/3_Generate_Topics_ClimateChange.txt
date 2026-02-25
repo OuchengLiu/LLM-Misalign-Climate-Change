@@ -1,0 +1,77 @@
+You are an expert research curator specialising in "{subject}". Your task is to identify the main topics touched on by the text below, and for each topic provide a brief (≤ {m} words) explanation.
+The texts you need to identify will come from various sources, including reports, real-world user queries, online Q&A, AI-generated questions, social media posts, and more. At the same time, these texts may appear in any language (including English, Chinese, Russian, French, etc.). You need to detect the language, but always produce the output in English.
+
+
+GUIDELINES:
+
+1. Think of a “topic” as a high-level theme—but neither too abstract (e.g. “science”) nor too fine-grained (e.g. “NO₂ emissions from Euro-6 diesel cars in Canberra on 12 Jan 2021”). Some examples of granularity guide fot generated topics: Climate Change: Extreme Weather; Climate Change: Climate Modeling; Climate Change: Urban Planning; Climate Change: Economic Impacts.
+
+2. Express each topic in the form "{subject}: <related_domain>" where `<related_domain>` is:
+- A short, self-contained descriptor (no more than n={n} words), such as “entrepreneurship”, “agriculture”, “politics”, or “natural ecology”;
+- A concrete subdomain within {subject}, or an interdisciplinary area related to {subject}.
+
+3. Return between 1 and 3 topics. If the content is no plausible connection to {subject}, return exactly:[  { "topic": "Irrelevant Data", "explanation": "None" }], not "Climate Change: Irrelevant Data".
+
+4. Output a pure array of objects in English, each with:
+- "topic": a string like "Climate Change: Economic Phenomena";
+- "explanation": a string that explains the meaning of the topic in the context of {subject}, using no more than m = {m} words.
+
+
+EXAMPLES (Input → Output)
+Assume subject = "Climate Change", n = 4, m = 20.
+
+Example A (relevant; policy MCQ):
+Input:
+"The Paris Agreement on climate change legally binds 196 countries to take action on climate change by limiting global average temperature rise to no more than ______ above preindustrial levels. 2°C 3.1°C–3.7°C 1.5°C 3°C"
+Output:
+[
+  { "topic": "Climate Change: Policy & Governance", "explanation": "Global treaty committing nations to limit warming relative to preindustrial levels." },
+  { "topic": "Climate Change: Mitigation Targets", "explanation": "Paris-aligned thresholds: cap global warming at 1.5°C or 2°C above preindustrial averages." }
+]
+
+Example B (relevant; reasoning question):
+Input:
+"How many years of life human will survive on earth if we do not consider carbon footprint from today? Try to explain your answer. Your explanation should take the reader through reasoning step-by-step."
+Output:
+[
+  { "topic": "Climate Change: Climate Modeling", "explanation": "Model scenarios projecting future warming given changed emissions assumptions and carbon constraints." },
+  { "topic": "Climate Change: Risk Assessment", "explanation": "Assessing existential and societal risks, estimating survival horizons under different climate trajectories." }
+]
+
+Example C (relevant; economics):
+Input:
+"Tell me the importance of green economy."
+Output:
+[
+  { "topic": "Climate Change: Economic Impacts", "explanation": "Macroeconomic and sectoral costs, employment shifts, and market transitions driven by mitigation and adaptation policies." },
+  { "topic": "Climate Change: Green Economy", "explanation": "Policies and investments enabling sustainable growth, circularity, and rapid decarbonization across industries and infrastructure." }
+]
+
+Example D (relevant; policy, markets, ESG):
+Input:
+"Write an informative, captivating LinkedIn post about the Kenya CLIMATE CHANGE (AMENDMENT) BILL, 2023, touching on carbon trading, carbon credit policy, and its significance for the Africa climate summit; how does the bill impact ESG compliance in Kenya; how does it fit Msitu Africa’s mission?"
+Output:
+[
+  { "topic": "Climate Change: Carbon Markets", "explanation": "Market mechanisms trading verified emissions reductions or removals to finance mitigation and meet compliance or voluntary targets." },
+  { "topic": "Climate Change: Policy & Governance", "explanation": "National legislation establishing frameworks, institutions, and enforcement to align with international climate goals." },
+  { "topic": "Climate Change: ESG Compliance", "explanation": "Corporate disclosure, risk management, and compliance obligations integrating climate considerations within ESG frameworks." }
+]
+
+Example E (irrelevant; UI setting):
+Input:
+"Elaborate on the significance of the social marketing strategies adopted by global companies."
+Output:
+[
+  { "topic": "Irrelevant Data", "explanation": "None" }
+]
+
+Example F (irrelevant; agronomy for corn cockle):
+Input:
+"Tell me the temperature in celsius, hydrometry in percentage, sunshine in hours, rainfall in mm, humidity in percentage, soil type, climate, water level and suitable plantation location country or city for corn cockle seed in bullets 2 words answer in number."
+Output:
+[
+  { "topic": "Irrelevant Data", "explanation": "None" }
+]
+
+
+

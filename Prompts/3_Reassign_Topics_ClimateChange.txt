@@ -1,0 +1,104 @@
+You are an expert in climate change science.
+Classify the input text into at most 3 core topics based on the taxonomy below.
+
+**Decision Rules:**
+1. Identify only **core, directly relevant** topics (do not assign marginal or weakly related ones).
+2. Return up to 3 topics; fewer is acceptable.
+3. If the text **does not clearly map to any topic or unrelated to climate change**, return Others only.
+   - When classifying as Others, return only one item:
+   [
+     { "topic": "F1. Others" }
+   ]
+4. Do not create new topics. Use only the taxonomy provided.
+
+Output Format (STRICT)
+Return ONLY a JSON array of 1–3 objects, each with a single field:
+[
+  { "topic": "A5. Climate Modeling" },
+  { "topic": "E1. Climate Policy, Governance & Finance Mechanism" }
+]
+
+---
+
+**Taxonomy:**
+
+**A. Climate Science Foundations & Methods:**
+A1. Atmospheric Science & Climate Processes: Studies circulation, clouds, aerosols, radiation, and related processes shaping climate systems.
+A2. Greenhouse Gas & Biogeochemical Cycles: Examines greenhouse gas generation, emissions, cycles, impacts, etc. on climate balance.
+A3. Oceans, Cryosphere & Sea-Level Change: Investigates ocean warming, cryosphere loss, sea-level rise, etc.
+A4. Extreme Weather Events: Explores climate-driven heatwaves, floods, droughts, storms, etc.
+A5. Climate Modeling: Applies models and statistical analyses to climate data for projections, scenarios, and process understanding.
+A6. Environmental Monitoring: Observes climate systems using satellites, field data, reanalysis, remote sensing, etc.
+
+**B. Ecological Impacts:**
+B1. Biodiversity Loss: Assesses species decline, extinction risks, habitat degradation, etc. from climate change.
+B2. Terrestrial & Freshwater Ecosystem Changes: Studies forests, soils, rivers, lakes, and related systems under climate impacts.
+B3. Marine & Coastal Ecosystem Changes: Examines coral reefs, fisheries, coastal habitats, etc. affected by warming.
+
+**C. Human Systems & Socioeconomic Impacts:**
+C1. Agriculture & Food Security: Analyzes crops, forestry, livestock, fruits, food access, and security, etc. under climate stress.
+C2. Water Resources & Hydrological Impacts: Evaluates floods, droughts, runoff, groundwater, etc. under changing climates.
+C3. Human Health & Well-being: Investigates disease, heat stress, air quality, and related health risks.
+C4. Social Equity, Vulnerability & Migration: Considers inequality, vulnerability, displacement, migration, etc. from climate impacts.
+C5. Urban Systems & Infrastructure Impacts: Examines risks to cities, transport, energy, buildings, etc. under climate change.
+C6. Service & Industry Sector Impacts: Studies services, tourism, industry, markets, etc. influenced by climate change.
+
+**D. Adaptation Strategies:**
+D1. Agricultural & Food System Adaptation: Develops crops, forestry, livestock, fruits, and practices for climate resilience, etc.
+D2. Urban Planning, Adaptation & Resilience: Builds resilient cities through planning, green infrastructure, adaptation, etc.
+D3. Public Health Adaptation: Strengthens health systems, surveillance, services, etc. to protect communities from climate risks.
+D4. Public Awareness, Communication & Community Engagement: Promotes environmental awareness, communication, and collective action, countering climate skepticism.
+D5. Natural Resource Management & Conservation: Conserves ecosystems, biodiversity, and resources, applying protection and restoration, etc.
+
+**E. Mitigation Mechanisms:**
+E1. Climate Policy, Governance & Finance Mechanism: Enacts policies, governance, treaties, carbon pricing, finance, etc. to reduce emissions.
+E2. Energy Transition: Advances renewable energy, electrification, efficiency, smart grids, etc. to replace fossil fuels.
+E3. Corporate & Industry Climate Action: Drives corporate responsibility, decarbonization, and sustainability initiatives, etc.
+E4. Land Use & Ecosystem-based Mitigation: Enhances forests, soils, land-use management, etc. to store carbon.
+E5. Transport & Building Emissions Reduction: Cuts emissions through efficient, low-carbon transport, buildings, retrofits, etc.
+
+**F. Others:**
+F1. Others: Text unmappable to topics above or unrelated to climate change.
+
+---
+
+**Examples:**
+
+Example A (relevant)
+Input:
+"What are the forecasts for the cherry industry in Michigan, USA, given projections for changing frost patterns?"
+Output:
+[
+  { "topic": "C1. Agriculture & Food Security" },
+  { "topic": "A4. Extreme Weather Events" }
+]
+
+Example B (relevant)
+Input:
+"The Paris Agreement on climate change legally binds 196 countries to take action on climate change by limiting global average temperature rise to no more than ______ above preindustrial levels. 2°C 3.1°C–3.7°C 1.5°C 3°C"
+Output:
+[
+  { "topic": "E1. Climate Policy, Governance & Finance Mechanism" }
+]
+
+Example C (relevant):
+Input:
+"Using Mauna Loa CO₂ data (1996–2010), build fitting and prediction models, then compare accuracy improvements from different terms."
+Output:
+[
+  { "topic": "A5. Climate Modeling" },
+]
+
+Example D (irrelevant)
+Input:
+"Elaborate on the significance of the social marketing strategies adopted by global companies."
+Output:
+[
+  { "topic": "F1. Others" }
+]
+
+
+
+
+
+

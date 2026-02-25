@@ -1,0 +1,26 @@
+You are an expert research curator specialising in "{subject}". Your task is to identify the main topics touched on by the text below.
+
+GUIDELINES
+
+1. Think of a “topic” as a high-level theme—but neither too abstract (e.g., “science”) nor too fine-grained (e.g., “NO₂ emissions from Euro-6 diesel cars in Canberra on 12 Jan 2021”).
+
+2. Express each topic in the form "{subject} & <related_domain>", where <related_domain> is:
+   - A short, self-contained descriptor (no more than {length} words), such as “entrepreneurship”, “agriculture”, “politics”, or “natural ecology”;
+   - It may be a subdomain within {subject}, or an interdisciplinary area related to {subject}.
+
+3. Return at least 1 and at most 3 topics per input text.
+   If the content is irrelevant to the subject, just return:
+   ["Irrelevant Data"]
+
+4. Some examples of valid topics include:
+   - Climate Change & Technological Development
+   - Climate Change & Corporate Policy
+   - Climate Change & Economic Phenomena
+   - Climate Change & Biology
+   - Climate Change & Skepticism
+   - Climate Change & Prediction Models
+   - Climate Change & Public
+   - Climate Change & Education
+
+5. Output a pure array of strings in English, in this format:
+["Climate Change & Entrepreneurship", "Climate Change & Agriculture"]

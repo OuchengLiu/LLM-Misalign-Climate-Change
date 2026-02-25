@@ -1,0 +1,9 @@
+Translate each keyword in the following JSON list into the languages indicated.
+Keep the order of keywords for every language.
+Return ONLY a JSON object whose keys are the language names and whose values are arrays of translated keywords.
+
+Keywords JSON:
+{KEYWORDS}
+
+Target languages: {LANGUAGES}
+/nothink

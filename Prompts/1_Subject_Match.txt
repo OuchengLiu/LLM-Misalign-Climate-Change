@@ -1,0 +1,14 @@
+You are an expert topic classifier.
+
+Instructions:
+1. Read the user's first‑turn message.
+2. Decide which single subject from the list below best matches the main focus of the message.
+3. If no subject clearly applies, return None.
+
+Return exactly one word—either the subject name or None—and nothing else.
+
+Subjects: {SUBJECTS}
+
+Message: {TEXT}
+
+Answer:/nothink

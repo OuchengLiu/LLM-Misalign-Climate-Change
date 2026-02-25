@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Topic Trees Visualization</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    html, body { height: 100%; }
+    #treeSvg { width: 100%; height: 100%; cursor: grab; }
+    .node rect { rx: 10px; ry: 10px; }
+    .node text { font-size: 12px; pointer-events: none; }
+    .link { fill: none; stroke: #cbd5e1; stroke-width: 2px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <header class="px-6 py-4 shadow-sm bg-white sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-wrap gap-3 items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold">Topic Trees Visualization</h1>
+        <p class="text-sm text-slate-600">Display the process of Topic Merge through the Tree structure. Each topic contains some corresponding samples.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="searchInput" type="text" placeholder="Search ID or Name..." class="px-3 py-2 rounded-xl border" />
+        <label class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2">
+          <span class="text-xs text-slate-500">Sample</span>
+          <input id="sampleCount" type="number" min="1" value="5" class="w-20 bg-transparent outline-none" />
+        </label>
+        <label class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2">
+          <span class="text-xs text-slate-500">Orientation</span>
+          <select id="orientation" class="bg-transparent outline-none">
+            <option value="horizontal">Horizontal</option>
+            <option value="vertical">Vertical</option>
+          </select>
+        </label>
+        <button id="zoomIn" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">Zoom In</button>
+        <button id="zoomOut" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">Zoom Out</button>
+        <button id="resetZoom" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">Reset</button>
+        <button id="fitBtn" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Fit View</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 gap-4">
+    <div class="bg-white rounded-2xl shadow p-4 text-sm text-slate-700">
+      <h3 class="font-semibold mb-2">Upload files</h3>
+      <div class="grid sm:grid-cols-3 gap-3 items-start">
+        <label class="block">
+          <div class="text-xs text-slate-500 mb-1">1) Topics_Tree.jsonl <span class="text-orange-600">(REQUIRED)</span></div>
+          <input id="topicsInput" type="file" accept=".jsonl,.json,.txt" class="px-3 py-2 rounded-xl border w-full" />
+          <div class="text-[11px] text-slate-500 mt-1">Fields: level(≥2), parent_id, parent_topic, parent_explanation, children_ids, children_topics</div>
+        </label>
+        <label class="block">
+          <div class="text-xs text-slate-500 mb-1">2) Topics_1.csv <span class="text-emerald-600">(For L1 explanation + count)</span></div>
+          <input id="topics1Input" type="file" accept=".csv" class="px-3 py-2 rounded-xl border w-full" />
+          <div class="text-[11px] text-slate-500 mt-1">Format (header optional): <code>L1_id,name,explanation,count</code></div>
+        </label>
+        <label class="block">
+          <div class="text-xs text-slate-500 mb-1">3) All_Data_with_Topic.jsonl <span class="text-slate-500">(Optional)</span></div>
+          <input id="allDataInput" type="file" accept=".jsonl,.json,.txt" class="px-3 py-2 rounded-xl border w-full" />
+          <div class="text-[11px] text-slate-500 mt-1">Using for L1 examples.</div>
+        </label>
+      </div>
+    </div>
+
+    <section id="tree" class="h-[78vh] bg-white rounded-2xl shadow overflow-hidden relative">
+      <svg id="treeSvg"></svg>
+      <div id="hint" class="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">Upload files to render the forest.</div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] overflow-auto" id="modalCard">
+      <div class="flex items-start justify-between p-4 border-b">
+        <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+        <div class="flex items-center gap-2">
+          <button id="resampleBtn" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 hidden">Resample</button>
+          <button id="closeModal" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200">Close</button>
+        </div>
+      </div>
+      <div id="modalBody" class="p-4 space-y-4 text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+    // =============================
+    // Helpers (English comments)
+    // =============================
+    const $ = sel => document.querySelector(sel);
+    function readFileAsText(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsText(file); }); }
+    function parseJSONL(text){ return text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l && !l.startsWith('#')).map(l=>{ try{return JSON.parse(l);}catch{return null;} }).filter(Boolean); }
+    function parseCSV(text){ const rows=[]; let i=0,f='',q=false,row=[]; const pf=()=>{row.push(f);f=''}; const pr=()=>{ if(row.length){rows.push(row);row=[];} }; while(i<text.length){ const ch=text[i++]; if(q){ if(ch==='"'){ if(text[i]==='"'){f+='"';i++;} else { q=false; } } else { f+=ch; } } else { if(ch==='\n'){ pf(); pr(); } else if(ch==='\r'){ } else if(ch===','){ pf(); } else if(ch==='"'){ q=true; } else { f+=ch; } } } pf(); pr(); return rows; }
+    const isL1Id=id=> typeof id==='string' && /^L1_\d+$/i.test(id);
+    const measurer=(()=>{ const c=document.createElement('canvas'); const ctx=c.getContext('2d'); ctx.font='12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif'; return s=>ctx.measureText(String(s||'')).width; })();
+
+    // =============================
+    // Global state
+    // =============================
+    let topicsRaw=[], allDataRaw=[];         // JSONL sources
+    let l1Csv=new Map();                     // L1_id -> { name, explanation, count }
+    let byId=new Map(), forestRoots=[];      // graph
+    let filterKeyword='';
+    let zoomBehavior=null;
+    let lastModalL1Id=null, lastModalSamplesPool=[];
+
+    // =============================
+    // File inputs
+    // =============================
+    $('#topicsInput').addEventListener('change', async e=>{ topicsRaw=parseJSONL(await readFileAsText(e.target.files[0])); buildGraph(); render(true); });
+    $('#topics1Input').addEventListener('change', async e=>{ await loadTopics1(await readFileAsText(e.target.files[0])); buildGraph(); render(true); });
+    $('#allDataInput').addEventListener('change', async e=>{ allDataRaw=parseJSONL(await readFileAsText(e.target.files[0])); });
+
+    // Drag & drop
+    document.addEventListener('dragover', e=> e.preventDefault());
+    document.addEventListener('drop', async e=>{ e.preventDefault(); const fs=Array.from(e.dataTransfer.files); const t=fs.find(f=>/topics?_tree/i.test(f.name)); const c=fs.find(f=>/topics?_?1\.csv/i.test(f.name)); const a=fs.find(f=>/all_data_with_topic/i.test(f.name)); if(t) topicsRaw=parseJSONL(await readFileAsText(t)); if(c) await loadTopics1(await readFileAsText(c)); if(a) allDataRaw=parseJSONL(await readFileAsText(a)); buildGraph(); render(true); });
+
+    // Search
+    let searchTimer=null; $('#searchInput').addEventListener('input', e=>{ clearTimeout(searchTimer); searchTimer=setTimeout(()=>{ filterKeyword=(e.target.value||'').trim().toLowerCase(); render(true); },200); });
+
+    $('#orientation').addEventListener('change', ()=> render(true));
+
+    async function loadTopics1(text){
+      const rows=parseCSV(text); if(!rows.length) return; let start=0; const head=rows[0].map(x=>x.trim().toLowerCase());
+      const looksHeader = !/^l\d+_\d+$/i.test(rows[0][0]||'') && !/^l1_\d+$/i.test(rows[0][0]||'');
+      let idIdx=0,nameIdx=1,expIdx=2,countIdx=3; if(looksHeader){ idIdx=head.findIndex(h=>['id','topic_id','topicid'].includes(h)); nameIdx=head.findIndex(h=>['name','topic_name','topicname','title'].includes(h)); expIdx=head.findIndex(h=>['explanation','desc','description','topic_explanation'].includes(h)); countIdx=head.findIndex(h=>['count','topic_count','n','freq'].includes(h)); start=1; }
+      l1Csv.clear(); for(let r=start;r<rows.length;r++){ const row=rows[r]; if(!row||row.length<2) continue; let rawId=(row[idIdx]||'').trim(); if(!rawId) continue; const id=/^L\d+_/i.test(rawId)?rawId:(/^\d+$/.test(rawId)?`L1_${rawId}`:rawId); const name=(row[nameIdx]||'').trim(); const explanation=(row[expIdx]||'').trim(); const count=parseInt((row[countIdx]||'').trim())||0; l1Csv.set(id,{name,explanation,count}); }
+    }
+
+    // =============================
+    // Build graph (L2+ from JSONL; L1 from parents' children + CSV enrichment)
+    // =============================
+    function buildGraph(){
+      byId=new Map(); forestRoots=[]; if(!topicsRaw.length){ $('#hint').classList.remove('hidden'); return; } $('#hint').classList.add('hidden');
+      const parentChildNameMap=new Map(); // parent_id -> Map(L1_id -> childName)
+      topicsRaw.forEach(n=>{
+        const id=n.parent_id; const baseName=n.parent_topic||id; const kids=Array.isArray(n.children_ids)?n.children_ids:[];
+        const namesArr = Array.isArray(n.children_names)? n.children_names : (Array.isArray(n.children_name)? n.children_name : (Array.isArray(n.children_topics)? n.children_topics : []));
+        const map=new Map(); kids.forEach((cid,i)=> map.set(cid, namesArr[i]||'')); parentChildNameMap.set(id,map);
+        byId.set(id,{ id, level:n.level, name:`${id} — ${baseName}`, explanation:n.parent_explanation||'', children_ids:kids.slice(), children:[] });
+      });
+      // Synthesize L1
+      byId.forEach(p=>{
+        const map=parentChildNameMap.get(p.id)||new Map();
+        p.children_ids.forEach(cid=>{
+          if(isL1Id(cid) && !byId.has(cid)){
+            const fromParent=map.get(cid)||''; const csv=l1Csv.get(cid)||{}; const labelName= fromParent || csv.name || cid;
+            byId.set(cid,{ id:cid, level:1, name:`${cid} — ${labelName}`, explanation:(csv.explanation||''), children_ids:[], children:[] });
+          }
+        });
+      });
+      // Link
+      byId.forEach(n=>{ n.children = n.children_ids.map(cid=>byId.get(cid)).filter(Boolean); });
+      // Roots
+      const childSet=new Set(); byId.forEach(n=> n.children_ids.forEach(cid=> childSet.add(cid))); forestRoots = Array.from(byId.values()).filter(n=> !childSet.has(n.id));
+    }
+
+    function labelOf(node){ return node.name || node.id; }
+
+    // =============================
+    // Render with per-level widths, vertical anti-overlap, and search filter
+    // =============================
+    function render(fit){
+      const svg=d3.select('#treeSvg'); svg.selectAll('*').remove(); if(!forestRoots.length){ return; }
+      const virtual={id:'ROOT', name:'ROOT', children: forestRoots}; let root=d3.hierarchy(virtual,d=>d.children);
+      const kw=(filterKeyword||'').toLowerCase(); if(kw){ const keep=new Set(); function up(d){ while(d){ if(d.data?.id) keep.add(d.data.id); d=d.parent; } } function down(d){ d.each(x=>{ if(x.data?.id) keep.add(x.data.id); }); } root.each(d=>{ const s=(labelOf(d.data)||'').toLowerCase(); if(s.includes(kw)) { up(d); down(d); } }); root.each(d=>{ if(d.children) d.children=d.children.filter(c=> keep.has(c.data.id)); }); }
+
+      const orient=$('#orientation').value; const baseGap=160; const layout=d3.tree().nodeSize(orient==='horizontal'?[28,baseGap]:[baseGap,28]).separation((a,b)=> a.parent===b.parent?1.1:1.5);
+      layout(root);
+
+      // Per-level width and lane offsets
+      const levelWidths=new Map(); root.descendants().forEach(d=>{ if(d.data.id==='ROOT') return; const lv = d.data.level || (isL1Id(d.data.id)?1:null); if(lv==null) return; const w=Math.ceil(measurer(labelOf(d.data)))+28; levelWidths.set(lv, Math.max(levelWidths.get(lv)||160, w)); });
+      const levels = Array.from(levelWidths.keys()).sort((a,b)=> b-a); const lanePadding=120; const laneOffset=new Map(); let acc=0; levels.forEach(lv=>{ laneOffset.set(lv, acc); acc += (levelWidths.get(lv)||160) + lanePadding; });
+
+      // Assign lanes (y = lane) for both orientations
+      const nodesArr=root.descendants().filter(d=> d.data.id!=='ROOT'); nodesArr.forEach(d=>{ const lv=d.data.level || (isL1Id(d.data.id)?1:null); const off=laneOffset.get(lv)||0; d.y = off; });
+
+      // Anti-overlap (vertical orientation): greedily dodge along X within each level
+      if(orient==='vertical'){
+        const byLevel=new Map(); nodesArr.forEach(d=>{ const lv=d.data.level || (isL1Id(d.data.id)?1:null); if(lv==null) return; if(!byLevel.has(lv)) byLevel.set(lv,[]); byLevel.get(lv).push(d); });
+        byLevel.forEach((arr,lv)=>{
+          const boxW = levelWidths.get(lv)||160; const pad=16; // minimal horizontal padding between boxes
+          arr.sort((a,b)=> a.x - b.x);
+          for(let i=1;i<arr.length;i++){
+            const prev=arr[i-1], curr=arr[i];
+            const minGap = (boxW/2 + boxW/2 + pad);
+            const gap = curr.x - prev.x;
+            if(gap < minGap){ curr.x = prev.x + minGap; }
+          }
+        });
+      }
+
+      const g=svg.append('g').attr('class','zoom-layer'); const inner=g.append('g').attr('class','content').attr('transform','translate(56,40)');
+
+      // Level guidelines
+      const axisVals=nodesArr.map(n=> n.x); const minAxis=Math.min(...axisVals,0)-120; const maxAxis=Math.max(...axisVals,0)+120; const levelsG=inner.append('g').attr('class','levels');
+      levels.forEach(lv=>{ const off=laneOffset.get(lv); levelsG.append('line').attr('class','level-line').attr('x1',minAxis).attr('x2',maxAxis).attr('y1',off).attr('y2',off); levelsG.append('text').attr('class','level-label').attr('x',minAxis-8).attr('y',off+5).attr('text-anchor','end').text('L'+lv); });
+
+      // Curved links
+      const linkGen = orient==='horizontal' ? d3.linkHorizontal().x(d=>d.y).y(d=>d.x) : d3.linkVertical().x(d=>d.x).y(d=>d.y);
+      inner.selectAll('.link').data(root.links().filter(l=> l.source.data.id!=='ROOT')).join('path').attr('class','link').attr('d', linkGen);
+
+      // Nodes
+      const nodes = inner.selectAll('.node').data(nodesArr).join('g').attr('class','node cursor-pointer').attr('transform', d=>{ const lv=d.data.level || (isL1Id(d.data.id)?1:null); const boxW=levelWidths.get(lv)||160; const x= orient==='horizontal' ? d.y - boxW/2 : d.x - boxW/2; const y= orient==='horizontal' ? d.x - 16 : d.y - 16; return `translate(${x},${y})`; }).on('click',(_,d)=> showModal(d.data));
+      nodes.append('rect').attr('width', d=>{ const lv=d.data.level || (isL1Id(d.data.id)?1:null); return levelWidths.get(lv)||160; }).attr('height',32).attr('fill', d=> (isL1Id(d.data.id)||d.data.level===1)?'#eef2ff':'#f8fafc').attr('stroke', d=> (isL1Id(d.data.id)||d.data.level===1)?'#6366f1':'#94a3b8');
+      nodes.append('text').attr('x',8).attr('y',20).text(d=> labelOf(d.data));
+
+      // Zoom controls
+      const zoom=d3.zoom().scaleExtent([0.4,4]).on('zoom',ev=> g.attr('transform', ev.transform)); svg.call(zoom); zoomBehavior=zoom;
+      $('#zoomIn').onclick=()=> svg.transition().duration(200).call(zoom.scaleBy,1.2);
+      $('#zoomOut').onclick=()=> svg.transition().duration(200).call(zoom.scaleBy,0.8);
+      $('#resetZoom').onclick=()=> svg.transition().duration(200).call(zoom.transform,d3.zoomIdentity);
+      $('#fitBtn').onclick=()=> fitToContent(inner, svg, zoom);
+      if(fit) fitToContent(inner, svg, zoom);
+    }
+
+    function fitToContent(g, svg, zoom){ const bbox=g.node().getBBox(); const w=svg.node().clientWidth||800; const h=svg.node().clientHeight||600; const pad=100; const scale=Math.min(3, 0.9*Math.min(w/(bbox.width+pad), h/(bbox.height+pad))); const tx=w/2 - scale*(bbox.x + bbox.width/2); const ty=h/2 - scale*(bbox.y + bbox.height/2); svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale)); }
+
+    // =============================
+    // Modal: count in modal only + outside click to close + resample
+    // =============================
+    function sampleArray(arr,k){ return arr.slice().sort(()=>0.5-Math.random()).slice(0,k); }
+    function showModal(node){
+      const title = labelOf(node);
+      // Explanation & count from CSV for L1
+      let explanation = node.explanation || '';
+      let countInfo = '';
+      if(isL1Id(node.id)){
+        const csv=l1Csv.get(node.id); if(csv){ if(csv.explanation) explanation = csv.explanation; if(typeof csv.count==='number' && csv.count>0) countInfo = `<div><b>Count:</b> ${csv.count}</div>`; }
+      }
+      let body = `<div><b>ID:</b> ${node.id}</div>${countInfo}<div><b>Explanation:</b> ${explanation || '(no explanation)'}</div>`;
+
+      // Children list or L1 examples with Resample
+      if(Array.isArray(node.children) && node.children.length){
+        body += `<div><b>Children Topics:</b><ul class=\"list-disc pl-5\">${node.children.map(c=>`<li>${labelOf(c)}</li>`).join('')}</ul></div>`;
+        $('#resampleBtn').classList.add('hidden');
+      } else if(isL1Id(node.id)){
+        const m=node.id.match(/^L1_(\d+)/i); if(m){ const idx=Number(m[1]); const k=Math.max(1, parseInt($('#sampleCount').value)||5); const pool=(allDataRaw||[]).filter(r=> Array.isArray(r.Initial_Topic) && r.Initial_Topic.includes(idx)); lastModalL1Id=node.id; lastModalSamplesPool=pool; const samples = pool.length>k ? sampleArray(pool, k) : pool; const exHtml = samples.length? `<ol class=\"list-decimal pl-5\">${samples.map(s=>`<li class=\"border-b py-2\"><div class=\"text-slate-500 text-xs mb-1\">${String(s.id||'')} · topics=${JSON.stringify(s.Initial_Topic||[])}</div><div>${String(s.text||'')}</div></li>`).join('')}</ol>` : `<div class=\"text-slate-500\">No examples found for ${node.id}.</div>`; body += `<div><div class=\"flex items-center justify-between\"><b>Examples (random ${k}):</b><span class=\"text-xs text-slate-500\">Click Resample to refresh</span></div><div id=\"examplesContainer\">${exHtml}</div></div>`; $('#resampleBtn').classList.remove('hidden'); }
+      }
+
+      $('#modalTitle').textContent = title; $('#modalBody').innerHTML = body; $('#modal').classList.remove('hidden'); $('#modal').classList.add('flex');
+    }
+
+    // Close modal: button + click outside card
+    $('#closeModal').addEventListener('click', ()=> $('#modal').classList.add('hidden'));
+    $('#modal').addEventListener('click', (ev)=>{ if(ev.target.id==='modal'){ $('#modal').classList.add('hidden'); } });
+
+    // Resample button
+    $('#resampleBtn').addEventListener('click', ()=>{
+      if(!lastModalL1Id) return; const m=lastModalL1Id.match(/^L1_(\d+)/i); if(!m) return; const k=Math.max(1, parseInt($('#sampleCount').value)||5); const pool=lastModalSamplesPool||[]; const samples = pool.length>k ? sampleArray(pool, k) : pool; const exHtml = samples.length? `<ol class=\"list-decimal pl-5\">${samples.map(s=>`<li class=\"border-b py-2\"><div class=\"text-slate-500 text-xs mb-1\">${String(s.id||'')} · topics=${JSON.stringify(s.Initial_Topic||[])}</div><div>${String(s.text||'')}</div></li>`).join('')}</ol>` : `<div class=\"text-slate-500\">No examples found for ${lastModalL1Id}.</div>`; const cont=$('#examplesContainer'); if(cont) cont.innerHTML = exHtml; });
+
+    // Initial empty render
+    render(true);
+  </script>
+</body>
+</html>
