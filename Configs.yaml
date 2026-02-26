@@ -1,0 +1,239 @@
+0_Firstturn_Deduplicated_Conversations_Extraction:
+  # ---------- paths ----------
+  data_dir: ../Data
+  input_file: LMSYSChat_Original.jsonl  # WildChat_Original.jsonl
+  firstturn_file: LMSYSChat_Firstturn.jsonl  # WildChat_Firstturn.jsonl
+  dedup_file: LMSYSChat_Firstturn_Dedup.jsonl  # WildChat_Firstturn_Dedup.jsonl
+
+  # ---------- extraction settings ----------
+  user_role_value: user
+  assistant_role_value: assistant
+  text_field: content
+  dedup_on_empty_user_question: false
+  dedup_hash_questions: true
+  keep_fields: [conversation_hash, text, toxic, language, state, country, model]
+  only_user: true
+
+
+1_RealWorld_Conversations_Extraction:
+  Extraction_by_Keywords:
+    # ---------- basic settings ----------
+    Subject: Climate Change
+    Number_of_Keywords: 3
+    Languages: [English, Chinese, Russian, French, Spanish, Portuguese, German,
+                Arabic, Italian, Turkish, Japanese, Korean, Polish, Vietnamese]
+
+    # ---------- I/O ----------
+    Data_Dir: ../Data
+    Input_File: WildChat_Firstturn_Dedup.jsonl
+    Logs_Dir: ../Logs
+
+    # ---------- model & prompts ----------
+    OpenAI_API_Key:  # TODO
+    Model: gpt-4o
+    Temperature: 0.0
+    Get_Keywords_Prompt: ../Prompts/1_Get_Keywords.txt
+    Translate_Prompt: ../Prompts/1_Translate_Keywords.txt
+
+  Extraction_by_LLM:
+    # ---------- basic settings ----------
+    Subject: "Climate Change, Finance, Math, Programming, Health, Education"
+
+    # ---------- I/O ----------
+    Data_Dir: ../Data
+    Input_File: LMSYSChat_Firstturn_Dedup.jsonl  # WildChat
+    Output_File: LMSYSChat_Firstturn_Dedup_with_Subject.jsonl  # WildChat
+    Split_Title: "LMSYSChat"  # WildChat
+    Logs_Dir: ../Logs
+    Flush_Interval: 100
+
+    # ---------- model & prompts ----------
+    Ollama_Model: qwen3:30b # llama3.2:1b # qwq:32b # llama3.1:8b
+    Ollama_Base_Url: http://localhost:11434/api/generate
+    Temperature: 0
+    Prompt: ../Prompts/1_Subject_Match.txt
+
+  Reddit_Extraction:
+    Client_ID: ""  # TODO
+    Client_Secret: ""  # TODO
+    User_Agent: ""  # TODO
+    Reddit_Community: ["climatechange", "climate", "climate_science", "GlobalClimateChange"]
+    Output_File: ../Data/Climate_Change/Reddit_ClimateChange/ClimateChange_Questions.jsonl
+
+2_Data_Formats_Unification:
+  # ---------- basic settings -----------
+  Subject: Climate Change  # will replace " " to "_" in code
+  save_path: ../Logs/Initial_{subject}/All_Data.jsonl  # ../Logs/Initial/{subject}/All_Data.jsonl
+
+  # ---------- real world -----------
+  real_world_data_path: ../Logs/Initial_{subject}  # ../Logs/Initial/{subject}
+
+  # ---------- benchmark -----------
+  benchmark_root_path: ../Data/{subject}
+  benchmark_data_list: [ClimaQA_Gold, ClimaQA_Silver, Climate_FEVER, ClimateQ&A, ClimSight, Environmental_Claims, IPCC_AR6, Reddit, SciDCC]
+
+
+3_Topic_Modelling:
+  Preliminary_Topic_Modelling:
+    # -------- basic settings --------
+    subject: Climate Change            # will replace " " to "_" in code
+    sub_words: 4         # n
+    explanation_words: 20   # m
+    max_retries: 3
+    llm_provider: openai               # "openai" or "ollama"
+    flush_interval: 5                   # update CSV interval
+
+    # -------- file paths --------
+    data_path: ../Logs/Initial_Climate_Change/All_Data.jsonl
+    prompt_path: ../Prompts/3_Generate_Topics_ClimateChange.txt
+
+    # -------- OpenAI settings --------
+    openai_model: gpt-4.1-mini
+    openai_api_key:  # TODO
+
+    # -------- Ollama settings --------
+    ollama_model: qwen3:30b
+    ollama_base_url: "http://localhost:11434/api/generate"
+
+    temperature: 0.2
+
+  Topic_Merge:
+    # -------- basic settings --------
+    subject: Climate Change            # will replace " " to "_" in code
+    sub_words: 4         # n
+    explanation_words: 20   # m
+
+    # path
+    log_dir: ../Logs/Topic_Merge_S1 # S2, S3, S4, s5, s6
+    merge_prompt_path: ../Prompts/3_Merge_Topics_ClimateChange.txt
+
+    # SBERT embedding
+    embedding_model: "qwen3://Qwen/Qwen3-Embedding-4B" # qwen3://Qwen/Qwen3-Embedding-4B  # "all-MiniLM-L6-v2"   # or "sentence-transformers/e5-large"
+
+    # -------- OpenAI settings --------
+    openai_model: gpt-4.1-mini  # gpt-5-mini
+    openai_api_key: s
+    temperature: 0.2
+    max_retries: 3
+
+    # batch & similarity
+    batch_size: 10                        # each parent choose at most n candidates
+    # stop mode: inactivity | spread_mean | spread_max | both
+    stop_criteria: both # "both"
+    mean_threshold: 0.3                  # spread_mean threshold
+    max_threshold: 0.5                   # spread_max threshold
+
+  Transitional_Final_Topics:
+    log_dir: "../Logs/Topic_Merge_S1`"
+
+    data_with_topic: "All_Data_with_Topic.jsonl"
+    data_with_final_topic: "All_Data_with_Transitional_Final_Topic.jsonl"
+    topics_tree: "Topics_Tree.jsonl"
+    source_topics_csv: "Topics_1.csv"
+    final_topics_csv: "Topics_Final.csv"  # or other level topics  csv e.g. Topics_30.csv
+    csv_delimiter: ","
+    initial_field_candidates: ["Initial Topics","Initial_Topics","Initial_Topic"]
+    locked_topic_names: ["Irrelevant Data"]  # Meaningless Data
+
+  ReAssignment:
+    # -------- basic settings --------
+    max_retries: 3                      # LLM parse/validation retries
+    flush_interval: 10
+
+    # -------- file paths --------
+    data_path: "../Logs/Final_Climate Change/All_Data.jsonl"
+    prompt_path: "../Prompts/3_Reassign_Topics_ClimateChange.txt"
+
+    # -------- OpenAI settings --------
+    openai_model: gpt-5-mini
+    openai_api_key: # TODO
+    temperature: 0.2
+
+    # -------- connectivity guard  --------
+    connectivity_check_interval_secs: 5.0
+    connectivity_backoff_max_secs: 30.0
+
+  Statistical_Analysis:
+    # Base directory (if not set, defaults to ../Logs/Test/{SUBJECT_SLUG})
+    base_dir: "../Logs/Final_Climate_Change"
+
+    # Input/output file paths (optional: if not set, will use defaults under base_dir)
+    data_file: "../Logs/Final_Climate_Change/All_Data_with_Reassigned_Topics.jsonl"
+    out_csv: "../Logs/Final_Climate_Change/Topic_Analysis/Topic_Dataset_Stats_FilterOut.csv"
+
+    # Dataset list (defines CSV columns, regex is auto-generated if not provided)
+    datasets: [WildChat, LMSYSChat, Reddit, ClimateQ&A, ClimSight, ClimaQA_Gold, ClimaQA_Silver, Climate_FEVER, Environmental_Claims, SciDCC, IPCC_AR6]
+    # Optional regex override for dataset matching
+    dataset_regex: "^(WildChat|LMSYSChat|Reddit|ClimateQ&A|ClimSight|ClimaQA_Gold|ClimaQA_Silver|Climate_FEVER|Environmental_Claims|SciDCC|IPCC_AR6)"
+
+    # Rule selection (used when you run without CLI)
+    rules_default: ["ds", "topn"]
+      # Default rules to apply for topic filtering:
+      # - "global"  = global rule (apply thresholds or constraints across ALL datasets)
+      # - "ds"   = dataset rule (keep topics that appear in certain datasets)
+      # - "topn" = top-N rule (keep only the top N topics by ranking/score)
+      # You can enable any subset, e.g.:
+      #   ["topn"], ["global", "ds"], ["global", "ds", "topn"], etc.
+
+    rule_mode_default: "any"
+      # How multiple rules are combined:
+      # - "any" = OR logic (keep topics if they satisfy at least one rule)
+      # - "all" = AND logic (keep topics only if they satisfy all rules)
+
+    # Filtering thresholds
+    min_global_pct_default: 0.002   # keep topics with global share >= 0.2%
+    min_pct_any_default: 0.05       # per-dataset share threshold (1%)
+    min_pct_k_default: 2            # at least K datasets satisfy the per-dataset share
+    topn_default: 26                # top-N per dataset
+    topn_k_default: 1               # at least K datasets where topic is within top-N
+
+    # Plots
+    plot_format_default: "png"      # png (raster) or svg/pdf (vector)
+    plot_kde: true
+    plot_boxplot: true
+    plot_similarity_matrix: true
+
+    # Similarity/plot percentage source (controls KDE, boxplot, similarity matrix)
+    # - orig_no_none_pct: share in ALL data excluding <NONE>     [A]
+    # - filtered_pct:     share WITHIN currently kept topics     [B, default]
+    plt_source_default: "orig_no_none_pct"  # "filtered_pct"
+
+
+4_Type_Modelling:
+  Type_Classification_ClimateChange:
+    # -------- basic settings --------
+    max_retries: 3
+    llm_provider: openai               # "openai" or "ollama"
+    flush_interval: 5                  # update CSV interval
+
+    # -------- file paths --------
+    data_path: ../Logs/Final_Climate_Change/All_Data_with_Reassigned_Topic.jsonl
+    prompt_path: ../Prompts/4_Generate_Types_ClimateChange.txt
+
+    # -------- OpenAI settings --------
+    openai_model: gpt-5-mini
+    openai_api_key: # TODO
+    temperature: 0.2
+
+    # -------- Ollama settings --------
+    ollama_model: "qwen3:30b"
+    ollama_base_url: "http://localhost:11434/api/generate"
+
+  Statistical_Analysis:
+    # Optional subject name used by defaults
+    subject: "Climate Change"
+    # Datasets and matching rule
+    datasets: [WildChat, LMSYSChat, Reddit, ClimateQ&A, ClimSight, ClimaQA_Gold, ClimaQA_Silver, Climate_FEVER, Environmental_Claims, SciDCC, IPCC_AR6]
+    dataset_regex: "^(WildChat|LMSYSChat|Reddit|ClimateQ&A|ClimSight|ClimaQA_Gold|ClimaQA_Silver|Climate_FEVER|Environmental_Claims|IPCC_AR6|SciDCC)"
+
+    # Base directory
+    base_dir: "../Logs/Final_Climate_Change"
+
+    # --- Question-type stats I/O  ---
+    question_type_data_file: "../Logs/Final_Climate_Change/All_Data_with_Reassigned_Topic_with_QuestionType.jsonl"
+    question_type_enriched_jsonl: "../Logs/Final_Climate_Change/All_Data_with_Reassigned_Topic_with_Final_QuestionType.jsonl"
+    question_type_intent_csv: "../Logs/Final_Climate_Change/QuestionType_Analysis/intent_by_dataset.csv"
+    question_type_form_csv: "../Logs/Final_Climate_Change/QuestionType_Analysis/form_by_dataset.csv"
+    question_type_combo_csv: "../Logs/Final_Climate_Change/QuestionType_Analysis/intent_form_combo_by_dataset.csv"
+
+
