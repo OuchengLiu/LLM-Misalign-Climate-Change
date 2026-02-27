@@ -1,0 +1,11 @@
+WildChat_Original.jsonl: 837989 original conversations;
+WildChat_Firstturn.jsonl: 834347 (=834379-32) first‑turn conversations:
+- delete 3642 conversations which user empty;
+WildChat_Firstturn_Dedup.jsonl: 703342 conversations after deduplication:
+- delete 131005 (=122400+8605) conversations which user questions are duplicated;
+
+LMSYSChat_Original.jsonl: 1000000 original conversations;
+LMSYSChat_Firstturn.jsonl: 999919 first‑turn conversations:
+- delete 80+1 conversations which user empty (80 user empty, assistant present; 1 both user & assistant empty);
+LMSYSChat_Firstturn_Dedup.jsonl: 604510 conversations after deduplication:
+- delete 395409 conversations which user questions are duplicated (395409duplicate user only; 0 duplicate user + assistant);
