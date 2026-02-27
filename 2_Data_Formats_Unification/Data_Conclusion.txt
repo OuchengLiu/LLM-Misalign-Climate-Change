@@ -1,0 +1,13 @@
+ClimaQA_Gold: 633 records, 17076 tokens
+ClimaQA_Sliver: 3000 records, 82252 tokens
+Climate_FEVER: 1535 records, 38596 tokens
+ClimateQ&A: 3426 records, 42981 tokens
+ClimSight: 3000 records, 103897 tokens
+Environmental_Claims: 2647 records, 81242 tokens
+IPCC_AR6: 19780 records, 3859758 tokens
+Reddit: 1050 records, 170955 tokens
+SciDCC: 11539 records, 8453225 tokens
+WildChat: 1972 records, 270393 tokens
+LMSYSChat: 2409 records, 148050 tokens
+Total records: 50991
+Total tokens: 13268425
