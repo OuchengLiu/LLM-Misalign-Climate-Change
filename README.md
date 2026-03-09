@@ -45,11 +45,11 @@ Extraction of real-world conversations by subject.
 * **`Extraction_by_LLM.py`**
   * Uses LLM semantic understanding to extract queries related to any subject in a predefined **subject list**. Subjects include:
     * Climate Change (what we studied in this work)
+    * Health
+    * Education
     * Finance
     * Math
     * Programming
-    * Health
-    * Education
   * Detailed extracted datasets are available on HuggingFace #TODO.
 * **`Extraction_by_Keywords.py`**
   * Uses LLM-generated keywords for topic extraction. Supports multilingual extraction (14 languages including English, Chinese, Russian, etc.)
