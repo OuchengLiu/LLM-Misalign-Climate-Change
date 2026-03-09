@@ -84,7 +84,7 @@ Implements Section 4.2 of the paper: **Topic Identification**
 * **`Transitional_Final_Topics.py`**
   * Allows direct usage of merged topics as final taxonomy, maps initial topics to merged topics
 * **`ReAssignment.py`**
-  * Reassigns all samples based on manually revised topic taxonomy
+  * Reassigns all samples 1–3 topics based on manually revised topic taxonomy
   * Statistics:
     * 50,991 total
     * 4,649 deleted as irrelevant
