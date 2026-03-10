@@ -86,10 +86,10 @@ Implements Section 4.2 of the paper: **Topic Identification**
 * **`ReAssignment.py`**
   * Reassigns all samples 1–3 topics based on manually revised topic taxonomy
   * Statistics:
-    * 50,991 total
-    * 4,649 deleted as irrelevant
-    * 46,342 retained
-    * 42,261 core-topic samples
+    * 50,991 samples total
+    * 4,645 samples deleted due to they were labeled only as "Irrelevant Data" under the S5 topic merging setting
+    * 46,346 retained (Four special samples that contain the "Irrelevant Data" label but also include other labels were also retained.)
+    * 42,261 core-topic samples (remove 4085 samples labeled as "F. Others")
 * **`Topic_Tree_Visualizer.html`**
   * Interactive tree visualization of topic merging process
   * Supports:
