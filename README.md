@@ -1,10 +1,8 @@
-# Gaps in LLM Development on Socio-scientific Issues
-
-## Insights from a Climate Change Case Study — Code Repository
+# LLM Benchmark-User Need Misalignment for Climate Change 
 
 This repository contains the official code for the paper:
 
-> **Gaps in LLM Development on Socio-scientific Issues: Insights from a Climate Change Case Study**
+> **LLM Benchmark-User Need Misalignment for Climate Change**
 
 > 📄 Paper link: #TODO
 
@@ -14,7 +12,7 @@ This repository contains the official code for the paper:
 
 ## 📌 Overview
 
-This project investigates the Misalignment between Benchmarks and User Needs, using  Climate Change as a Case Study.
+This project investigates the Misalignment between Benchmarks and User Needs for Climate Change.
 
 The repository provides:
 
@@ -163,7 +161,7 @@ Including:
 
 ```bibtex
 @article{xxx202Xgaps,
-  title={Gaps in LLM Development on Socio-scientific Issues: Insights from a Climate Change Case Study},
+  title={LLM Benchmark-User Need Misalignment for Climate Change},
   author={Anonymous},
   journal={To be added},
   year={202X}
