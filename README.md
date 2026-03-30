@@ -4,9 +4,9 @@ This repository contains the official code for the paper:
 
 > **LLM Benchmark-User Need Misalignment for Climate Change**
 
-> 📄 Paper link: #TODO
+> 📄 Paper link: https://arxiv.org/abs/2603.26106
 
-> 🤗 HuggingFace Dataset & Resources: #TODO
+> 🤗 HuggingFace Dataset & Resources: https://huggingface.co/datasets/Westing/LLM-Misalign-Climate-Change
 
 ---
 
@@ -49,7 +49,7 @@ Extraction of real-world conversations by subject.
     * Finance
     * Math
     * Programming
-  * Detailed extracted datasets are available on HuggingFace #TODO.
+  * Detailed extracted datasets are available on [HuggingFace](https://huggingface.co/datasets/Westing/LLM-Misalign-Climate-Change).
 * **`Extraction_by_Keywords.py`**
   * Uses LLM-generated keywords for topic extraction. Supports multilingual extraction (14 languages including English, Chinese, Russian, etc.)
 * **`Reddit_Extraction.py`**
