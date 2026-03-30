@@ -160,10 +160,13 @@ Including:
 # 📄 Citation
 
 ```bibtex
-@article{xxx202Xgaps,
-  title={LLM Benchmark-User Need Misalignment for Climate Change},
-  author={Anonymous},
-  journal={To be added},
-  year={202X}
+@misc{liu2026llmbenchmarkuserneedmisalignment,
+      title={LLM Benchmark-User Need Misalignment for Climate Change}, 
+      author={Oucheng Liu and Lexing Xie and Jing Jiang},
+      year={2026},
+      eprint={2603.26106},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2603.26106}, 
 }
 ```
